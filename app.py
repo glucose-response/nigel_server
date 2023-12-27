@@ -8,7 +8,7 @@ from bson import ObjectId, json_util
 from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app)
+# CORS(app)
 
 # # Load config from .env file
 # load_dotenv()
