@@ -56,33 +56,33 @@ def index():
 #         print(f"An error occurred: {e}")
 #         return jsonify({'error': f'An error occurred while fetching profiles: {str(e)}'})
 
-# Add a new baby
-@app.route('/addBaby', methods=['POST'])
-def add_baby():
-    data = request.get_json() 
-    nigID = data["NigID"]   
-    date_of_birth = data['DoB']
-    group = data["Group"]
+# # Add a new baby
+# @app.route('/addBaby', methods=['POST'])
+# def add_baby():
+#     data = request.get_json() 
+#     nigID = data["NigID"]   
+#     date_of_birth = data['DoB']
+#     group = data["Group"]
 
-    # Insert into the database    
-    baby_id = profiles.insert_one({'NigID':nigID,'DoB': date_of_birth, 'group': group}).inserted_id
+#     # Insert into the database    
+#     baby_id = profiles.insert_one({'NigID':nigID,'DoB': date_of_birth, 'group': group}).inserted_id
 
-    result = {'id': str(baby_id),
-        'NigID':nigID,
-        'DoB': date_of_birth, 
-        'group': group
-    }
+#     result = {'id': str(baby_id),
+#         'NigID':nigID,
+#         'DoB': date_of_birth, 
+#         'group': group
+#     }
 
-    return jsonify(result), 201
+#     return jsonify(result), 201
 
 
 @app.route("/testing")
 def testing():
     return "Hello this is a test"
 
-@app.route('/getname/<name>',methods = ['POST'])
-def extract_name(name):
-    return "your name is "+ name
+# @app.route('/getname/<name>',methods = ['POST'])
+# def extract_name(name):
+#     return "your name is "+ name
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5000)
