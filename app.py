@@ -30,31 +30,31 @@ profiles = db.Profiles
 def index():
     return "Hello this is the main page"
 
-@app.route("/profiles")
-def baby_profiles():
+# @app.route("/profiles")
+# def baby_profiles():
 
-    try:
+#     try:
 
-        # print("db", mongo.Nigel)
-        # print("profiles", mongo.Nigel.Profiles)
+#         # print("db", mongo.Nigel)
+#         # print("profiles", mongo.Nigel.Profiles)
 
-        # Fetch all documents from the 'BabyProfiles' collection
-        # babies = mongo.Nigel.Profiles
+#         # Fetch all documents from the 'BabyProfiles' collection
+#         # babies = mongo.Nigel.Profiles
 
-        # Convert MongoDB cursor to a list for easy printing
-        baby_list = list(profiles.find())
-        print(baby_list)
+#         # Convert MongoDB cursor to a list for easy printing
+#         baby_list = list(profiles.find())
+#         print(baby_list)
 
-        serialized_baby_list = json_util.dumps(baby_list)
-        # Print each document
-        for baby in baby_list:
-            print(baby)
+#         serialized_baby_list = json_util.dumps(baby_list)
+#         # Print each document
+#         for baby in baby_list:
+#             print(baby)
 
-        return jsonify({'profiles': serialized_baby_list})
+#         return jsonify({'profiles': serialized_baby_list})
 
-    except Exception as e:
-        print(f"An error occurred: {e}")
-        return jsonify({'error': f'An error occurred while fetching profiles: {str(e)}'})
+#     except Exception as e:
+#         print(f"An error occurred: {e}")
+#         return jsonify({'error': f'An error occurred while fetching profiles: {str(e)}'})
 
 # Add a new baby
 @app.route('/addBaby', methods=['POST'])
