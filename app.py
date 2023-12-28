@@ -5,20 +5,10 @@ from dotenv import load_dotenv
 from flask_pymongo import PyMongo
 from pymongo import MongoClient
 from bson import ObjectId, json_util
-from flask_cors import CORS
+import logging
+
 
 app = Flask(__name__)
-# CORS(app)
-
-# # Load config from .env file
-# load_dotenv()
-# app.config['MONGO_URI'] = os.environ['MONGODB_URI']
-# mongo = PyMongo(app)
-
-# app.config['MONGO_URI'] = "mongodb+srv://tpan:ANLUYbfuddzznbgM@cluster0.ujgggjm.mongodb.net/?retryWrites=true&w=majority"
-# mongo = PyMongo(app)
-# print(f"Mongo: {mongo}")
-# print(f"DB: {mongo.db}")
 
 load_dotenv()
 MONGODB_URI =  os.environ["MONGODB_URI"] 
@@ -30,59 +20,45 @@ profiles = db.Profiles
 def index():
     return "Hello this is the main page"
 
-# @app.route("/profiles")
-# def baby_profiles():
+# Add a new baby
+@app.route('/addBaby', methods=["POST"])
+def add_baby():
+    logging.info(f"Received POST request: {request.json}")
 
-#     try:
+    try: 
+        data = request.get_json()
+        baby_id = profiles.insert_one(data).inserted_id
 
-#         # print("db", mongo.Nigel)
-#         # print("profiles", mongo.Nigel.Profiles)
+        result = {
+            "id": str(baby_id),
+            "NigID": data.get("NigID"),
+            "DoB": data.get("DoB"),
+            "group": data.get("group"),
+        }
 
-#         # Fetch all documents from the 'BabyProfiles' collection
-#         # babies = mongo.Nigel.Profiles
+        return jsonify(result), 201
 
-#         # Convert MongoDB cursor to a list for easy printing
-#         baby_list = list(profiles.find())
-#         print(baby_list)
+    except Exception as e:
+        return jsonify({"error": f"An error occurred: {str(e)}"}), 500
 
-#         serialized_baby_list = json_util.dumps(baby_list)
-#         # Print each document
-#         for baby in baby_list:
-#             print(baby)
 
-#         return jsonify({'profiles': serialized_baby_list})
+@app.route("/profiles")
+def baby_profiles():
 
-#     except Exception as e:
-#         print(f"An error occurred: {e}")
-#         return jsonify({'error': f'An error occurred while fetching profiles: {str(e)}'})
+    try:
+        baby_list = list(profiles.find())
+        serialized_baby_list = json_util.dumps(baby_list)
 
-# # Add a new baby
-# @app.route('/addBaby', methods=['POST'])
-# def add_baby():
-#     data = request.get_json() 
-#     nigID = data["NigID"]   
-#     date_of_birth = data['DoB']
-#     group = data["Group"]
+        return jsonify({"profiles": serialized_baby_list})
 
-#     # Insert into the database    
-#     baby_id = profiles.insert_one({'NigID':nigID,'DoB': date_of_birth, 'group': group}).inserted_id
-
-#     result = {'id': str(baby_id),
-#         'NigID':nigID,
-#         'DoB': date_of_birth, 
-#         'group': group
-#     }
-
-#     return jsonify(result), 201
+    except Exception as e:
+        return jsonify({"error": f"An error occurred while fetching profiles: {str(e)}"}), 500
 
 
 @app.route("/testing")
 def testing():
     return "Hello this is a test"
 
-# @app.route('/getname/<name>',methods = ['POST'])
-# def extract_name(name):
-#     return "your name is "+ name
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5000)
