@@ -6,10 +6,8 @@ from flask_pymongo import PyMongo
 from pymongo import MongoClient
 from bson import ObjectId, json_util
 import logging
-from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app)
 
 load_dotenv()
 MONGODB_URI =  os.environ["MONGODB_URI"] 
