@@ -22,6 +22,9 @@ def index():
 # Add a new baby
 @app.route('/?addBaby', methods=["POST"])
 def add_baby():
+
+    print("POST Requested")
+    
     logging.info(f"Received POST request: {request.json}")
 
     try: 
