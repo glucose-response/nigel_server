@@ -20,7 +20,7 @@ def index():
     return "Hello this is the main page"
 
 # Add a new baby
-@app.route('/addBaby', methods=["POST"])
+@app.route('/?addBaby', methods=["POST"])
 def add_baby():
     logging.info(f"Received POST request: {request.json}")
 
