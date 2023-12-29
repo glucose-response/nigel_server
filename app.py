@@ -8,6 +8,8 @@ from bson import ObjectId, json_util
 import logging
 
 app = Flask(__name__)
+app.logger.addHandler(logging.StreamHandler(sys.stdout))
+app.logger.setLevel(logging.ERROR) 
 
 load_dotenv()
 MONGODB_URI =  os.environ["MONGODB_URI"] 
@@ -23,9 +25,9 @@ def index():
 @app.route('/?addBaby', methods=["POST"])
 def add_baby():
 
-    print("POST Requested")
-    
-    logging.info(f"Received POST request: {request.json}")
+    app.logger.info('Info: Visiting the root page')
+
+    # logging.info(f"Received POST request: {request.json}")
 
     try: 
         data = request.get_json()
