@@ -1,3 +1,5 @@
+ # Example of how to get the data from a excel data stored locally
+
 import os
 from dotenv import load_dotenv
 import pandas as pd

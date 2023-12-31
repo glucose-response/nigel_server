@@ -1,5 +1,5 @@
 # Ref 1: https://flask-pymongo.readthedocs.io/en/latest/ 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_file
 import os
 from dotenv import load_dotenv
 from pymongo import MongoClient
@@ -8,6 +8,7 @@ from bson import json_util
 import logging
 import sys
 from fileHandling import *
+import pandas as pd
 
 app = Flask(__name__)
 app.logger.addHandler(logging.StreamHandler(sys.stdout))
@@ -21,10 +22,6 @@ db = client.Nigel
 profiles = db.Profiles
 db_sweat= db.Sweat_Ms
 db_blood = db.Blood_Ms
-
-# Configuration for file upload
-UPLOAD_FOLDER = 'uploads'
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 @app.route("/")
 def index():
@@ -50,45 +47,23 @@ def add_baby():
         return jsonify(result), 201
 
     except Exception as e:
-        return jsonify({"error": f"An error occurred: {str(e)}"}), 500
+        return jsonify({"error": f"An error occurred: {str(e)}"}), 500 
     
-# Add glucose data to the database
-# If there is no data for that specific baby, it creates a new document in MongoDB
-# Else, find the NiGID in the table 
-    
-# @app.route('/addGlucose', methods=["PUT"])
-# def add_sweat_measurements():
-#     try: 
-#         data = request.get_json()
-#         glucose_id = profiles.insert_one(data).inserted_id
-#         #change this so it gives me the correct result by converting the strings into integers and date types
-
-#         result = {
-#             "id": str(baby_id),
-#             "NigID": data.get("NigID"),
-#             "DoB": data.get("DoB"),
-#             "group": data.get("group"),
-#         }
-
-#         return jsonify(result), 201
-
-#     except Exception as e:
-#         return jsonify({"error": f"An error occurred: {str(e)}"}), 500
-
-#If there is a json file and it specifies the NigID of the baby you want to look at, 
-#then this will return everything in the profile database
-    
-#Need to fix this
+#Able to locate a certain baby depending on the nigelID wanted
 @app.route('/findbaby', methods = ['GET'])
 def get_baby_info():
-    nigID = request.get_json['NigID']
+    nigelID = request.args.get('NigelID')
+    print(nigelID)
 
     # Find the baby by ID in the MongoDB collection
-    baby = profiles.find_one({'NigID': nigID})
+    baby = profiles.find_one({'NigelID': int(nigelID)})
 
     if baby:
         # Baby found, return the information as JSON
-        return jsonify({'baby_info': baby})
+        serialized_baby_list = json_util.dumps(baby)
+
+        return jsonify({"baby_info": serialized_baby_list})
+
     else:
         # Baby not found, return an error message
         return jsonify({'error': 'Baby not found'}), 404
@@ -107,37 +82,80 @@ def baby_profiles():
     except Exception as e:
         return jsonify({"error": f"An error occurred while fetching profiles: {str(e)}"}), 500
 
-
 @app.route("/testing")
 def testing():
     return "Hello this is a test"
 
-
-@app.route('/upload_data', methods=['POST'])
+# Upload the data from an excel spreadsheet
+@app.route('/upload_data', methods=['PUT'])
 def upload_data():
     try:
-        if 'file' not in request.files:
-            return jsonify({'error': 'No file part'}), 400
-
         file = request.files['file']
 
-        if file.filename == '':
-            return jsonify({'error': 'No selected file'}), 400
-
+        # Checks whether the file has been successfully received
         if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            file.save(file_path)
+            file_data = file.read()
 
-            # Process the Excel file (parse and save to MongoDB)
-            process_data(file_path, "your_mongodb_connection_string", "your_database_name", "your_collection_name")
+            # Debugging: Print the content of file_data
+            print("File Data:", file_data)
 
-            return jsonify({'message': 'File uploaded successfully'}), 200
+            # Getting a list of sheet names
+            xls = pd.ExcelFile(BytesIO(file_data))
+            sheet_names = xls.sheet_names
+
+            # Call the modified function to process and upload the data
+            process_data(file_data, db, sheet_names)  # Assuming file_data is a valid Excel file
+
+            return 'Data uploaded to MongoDB successfully'
         else:
-            return jsonify({'error': 'Invalid file format'}), 400
+            return 'No file provided or invalid file format', 400
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print("Error:", str(e))
+        return f'Error: {str(e)}', 400
 
+# Getting the data from mongoDB and convert into an excel file - just for Sweat_Ms
+@app.route('/export_data_as_excel/Sweat_Ms', methods=['GET'])
+def export_excel():
+    try:
+        # Call the function to retrieve and export data
+        
+        fetched_data = retrieve_data(db, 'Sweat_Ms', 'output_data.xlsx')
+
+        # Check if the export was successful
+        if 'successfully' in fetched_data:
+            # Set the path where you want to save the file on the local desktop
+            local_path = "/Users/tianpan/Documents/output_data.xlsx"
+
+            # Move the file to the local path
+            os.rename('output_data.xlsx', local_path)
+
+            # Send the file as a response
+            return send_file(local_path, as_attachment=True)
+
+        # Handle error case
+        return fetched_data, 500
+
+    except Exception as e:
+        # Handle exceptions
+        return f'Error: {str(e)}', 500
+
+#Need to fix this part
+#Convert the data from the mongodb into json form
+@app.route('/export_data_as_json', methods = ['GET'])
+def export_json():
+    # This is the query parameters from the android studio
+    collection = request.args.get('collection')
+    nigelID = request.args.get('NigelID')
+
+    data = list(db.collection.findOne({'NigelID': int(nigelID)}))
+    print("Retrieved data:", data)
+
+    if data:
+        serialised_data_list = json_util.dumps(data)
+        return jsonify({collection + ' for ' + nigelID: serialised_data_list})
+    else:
+        # Baby not found, return an error message
+        return jsonify({'error': 'Baby not found'}), 404
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
