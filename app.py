@@ -139,15 +139,17 @@ def export_excel():
         # Handle exceptions
         return f'Error: {str(e)}', 500
 
-#Need to fix this part
 #Convert the data from the mongodb into json form
 @app.route('/export_data_as_json', methods = ['GET'])
 def export_json():
     # This is the query parameters from the android studio
     collection = request.args.get('collection')
     nigelID = request.args.get('NigelID')
+    print(collection, nigelID)
 
-    data = list(db.collection.findOne({'NigelID': int(nigelID)}))
+    myquery = {'NigelID': int(nigelID)}
+
+    data = db[collection].find(myquery)
     print("Retrieved data:", data)
 
     if data:
