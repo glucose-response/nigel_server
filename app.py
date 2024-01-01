@@ -53,6 +53,8 @@ def baby_profiles():
     try:
         baby_list = list(profiles.find())
 
+        all_babies = []
+
         #Construct a custom JSON format
         for baby in baby_list:
             formatted_babies = [{
@@ -63,8 +65,10 @@ def baby_profiles():
                     "GestationalAge": baby.get("Gestational Age (weeks)",0), # Get gestational age or default to 0
                     "Notes": baby.get("Notes","")
                 }]
+            
+            all_babies.append(formatted_babies)
     
-        return jsonify({"profiles": formatted_babies}), 201
+        return jsonify({"profiles": all_babies}), 201
 
     except Exception as e:
         return jsonify({"error": f"An error occurred while fetching profiles: {str(e)}"}), 500
