@@ -47,14 +47,24 @@ def add_baby():
         return jsonify({"error": f"An error occurred: {str(e)}"}), 500
 
 
-@app.route("/profiles")
+@app.route("/profiles", methods = ["GET"])
 def baby_profiles():
 
     try:
         baby_list = list(profiles.find())
-        serialized_baby_list = json_util.dumps(baby_list)
 
-        return jsonify({"profiles": serialized_baby_list})
+        #Construct a custom JSON format
+        for baby in baby_list:
+            formatted_babies = [{
+                    "ObjectId": str(baby["_id"]), #Assuming "_id" is an ObjectId
+                    "NigelID": baby.get("NigelID",""), # Get 'NigID' or default to an empty string
+                    "DateOfBirth": baby.get("Date of Birth",0), # Get "Date of Birth" or default to 0
+                    "BirthWeight": baby.get("Birth Weight (kg)",0),
+                    "GestationalAge": baby.get("Gestational Age (weeks)",0), # Get gestational age or default to 0
+                    "Notes": baby.get("Notes","")
+                }]
+    
+        return jsonify({"profiles": formatted_babies}), 201
 
     except Exception as e:
         return jsonify({"error": f"An error occurred while fetching profiles: {str(e)}"}), 500
