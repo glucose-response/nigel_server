@@ -26,6 +26,11 @@ db_blood = db.Blood_Ms
 @app.route("/")
 def index():
     return "Hello this is the main page"
+  
+# Test that routing works
+@app.route("/testing")
+def testing():
+    return "Hello this is a test"
 
 # Add a new baby profile to the Profiles database
 @app.route('/addBaby', methods=["PUT"])
@@ -70,21 +75,33 @@ def get_baby_info():
 
 
 # This prints out all the profiles that are on the MongoDB database
-@app.route("/profiles")
+@app.route("/profiles", methods = ["GET"])
 def baby_profiles():
 
     try:
         baby_list = list(profiles.find())
-        serialized_baby_list = json_util.dumps(baby_list)
 
-        return jsonify({"profiles": serialized_baby_list})
+        all_babies = []
+
+        #Construct a custom JSON format
+        for baby in baby_list:
+            formatted_babies = [{
+                    "ObjectId": str(baby["_id"]), #Assuming "_id" is an ObjectId
+                    "NigelID": baby.get("NigelID",""), # Get 'NigID' or default to an empty string
+                    "DateOfBirth": baby.get("Date of Birth",0), # Get "Date of Birth" or default to 0
+                    "BirthWeight": baby.get("Birth Weight (kg)",0),
+                    "GestationalAge": baby.get("Gestational Age (weeks)",0), # Get gestational age or default to 0
+                    "Notes": baby.get("Notes","")
+                }]
+            
+            all_babies.append(formatted_babies)
+    
+        return jsonify({"profiles": all_babies}), 201
 
     except Exception as e:
         return jsonify({"error": f"An error occurred while fetching profiles: {str(e)}"}), 500
 
-@app.route("/testing")
-def testing():
-    return "Hello this is a test"
+
 
 # Upload the data from an excel spreadsheet
 @app.route('/upload_data', methods=['PUT'])
