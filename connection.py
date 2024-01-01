@@ -4,6 +4,7 @@ import datetime
 from dotenv import load_dotenv
 from pymongo import MongoClient #This initiates the connection with the database
 
+# This is an example of how to add a new baby to the mongodb database
 load_dotenv()
 MONGODB_URI =  os.environ["MONGODB_URI"] 
 client = MongoClient(MONGODB_URI) 
