@@ -9,6 +9,7 @@ import logging
 import sys
 from fileHandling import *
 import pandas as pd
+import json
 
 app = Flask(__name__)
 app.logger.addHandler(logging.StreamHandler(sys.stdout))
@@ -130,13 +131,15 @@ def upload_data():
         print("Error:", str(e))
         return f'Error: {str(e)}', 400
 
+#This only seems to work for Sweat_Ms so far so I need to change the fileHandling code for the others
 # Getting the data from mongoDB and convert into an excel file - just for Sweat_Ms
-@app.route('/export_data_as_excel/Sweat_Ms', methods=['GET'])
+@app.route('/export_data_as_excel', methods=['GET'])
 def export_excel():
     try:
         # Call the function to retrieve and export data
-        
-        fetched_data = retrieve_data(db, 'Sweat_Ms', 'output_data.xlsx')
+        collection = request.args.get('collection')
+
+        fetched_data = retrieve_data(db, collection, 'output_data.xlsx')
 
         # Check if the export was successful
         if 'successfully' in fetched_data:
@@ -160,21 +163,26 @@ def export_excel():
 @app.route('/export_data_as_json', methods = ['GET'])
 def export_json():
     # This is the query parameters from the android studio
+
     collection = request.args.get('collection')
     nigelID = request.args.get('NigelID')
     print(collection, nigelID)
 
     myquery = {'NigelID': int(nigelID)}
 
-    data = db[collection].find(myquery)
+    data = list(db[collection].find(myquery))
     print("Retrieved data:", data)
+        # Remove the '_id' field from each document
+    for entry in data:
+        entry.pop('_id')  # Remove the '_id' field
 
-    if data:
-        serialised_data_list = json_util.dumps(data)
-        return jsonify({collection + ' for ' + nigelID: serialised_data_list})
-    else:
-        # Baby not found, return an error message
-        return jsonify({'error': 'Baby not found'}), 404
+    # Convert the data to JSON format
+    json_data = json.dumps(data, default=json_util.default)
+
+    # Replace double backslashes with a single backslash
+    json_data_without_backslashes = json_data.replace("\\", "")
+
+    return jsonify({collection + " for " + nigelID: json.loads(json_data_without_backslashes)}), 201
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
