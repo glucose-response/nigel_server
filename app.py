@@ -131,7 +131,13 @@ def upload_data():
         print("Error:", str(e))
         return f'Error: {str(e)}', 400
 
-#This only seems to work for Sweat_Ms so far so I need to change the fileHandling code for the others
+# This sends a copy of the upload template to the app
+@app.route('/download_template',methods = ['GET'])
+def download_template():
+    excel_template = "upload_template.xlsx"
+    return send_file(excel_template, as_attachment= True)
+
+# This only seems to work for Sweat_Ms so far so I need to change the fileHandling code for the others
 # Getting the data from mongoDB and convert into an excel file - just for Sweat_Ms
 @app.route('/export_data_as_excel', methods=['GET'])
 def export_excel():
@@ -162,8 +168,8 @@ def export_excel():
 #Convert the data from the mongodb into json form
 @app.route('/export_data_as_json', methods = ['GET'])
 def export_json():
+    
     # This is the query parameters from the android studio
-
     collection = request.args.get('collection')
     nigelID = request.args.get('NigelID')
     print(collection, nigelID)
@@ -172,7 +178,7 @@ def export_json():
 
     data = list(db[collection].find(myquery))
     print("Retrieved data:", data)
-        # Remove the '_id' field from each document
+
     for entry in data:
         entry.pop('_id')  # Remove the '_id' field
 
