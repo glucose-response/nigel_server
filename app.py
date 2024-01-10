@@ -39,17 +39,27 @@ def add_baby():
 
     try: 
         data = request.get_json()
-        baby_id = profiles.insert_one(data).inserted_id
 
-        result = {
-            "id": str(baby_id),
-            "NigID": data.get("id"),
-            "DoB": data.get("birthDate"),
-            "Weight": data.get("weight"),
-            "GestationalAge": data.get("gestationalAge"),
-            "group": data.get("group"),
-        }
+        if 'NigelID' not in data:
+            return jsonify({"error": "Missing 'id' in the request data"}),400
 
+        nigel_id = data.get("NigelID")
+
+        existing_profile = profiles.find_one({"NigelID":nigel_id})
+        if existing_profile:
+            return jsonify({"error": f"A profile with NigelID {nigel_id} already exists"}), 400
+        
+        else:
+            baby_id = profiles.insert_one(data).inserted_id
+
+            result = {
+                "id": str(baby_id),
+                "NigelID": data.get("NigelID"),
+                "DoB": data.get("DateOfBirth"),
+                "Weight": data.get("BirthWeight"),
+                "GestationalAge": data.get("GestationalAge"),
+                "Notes": data.get("Notes"),
+            }
         return jsonify(result), 201
 
     except Exception as e:
