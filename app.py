@@ -99,10 +99,10 @@ def baby_profiles():
             formatted_babies = {
                     "ObjectId": str(baby["_id"]), #Assuming "_id" is an ObjectId
                     "NigelID": baby.get("NigelID",""), # Get 'NigID' or default to an empty string
-                    "DateOfBirth": baby.get("Date of Birth",0), # Get "Date of Birth" or default to 0
-                    "BirthWeight": baby.get("Birth Weight (kg)",0),
-                    "GestationalAge": baby.get("Gestational Age (weeks)",0), # Get gestational age or default to 0
-                    "Notes": baby.get("Notes","")
+                    "birthday": baby.get("birthday",0), # Get "Date of Birth" or default to 0
+                    "birthWeight": baby.get("birthWeight",0),
+                    "gestationalAge": baby.get("gestationalAge",0), # Get gestational age or default to 0
+                    "notes": baby.get("notes","")
                 }
             
             all_babies.append(formatted_babies)
