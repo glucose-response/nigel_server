@@ -86,14 +86,14 @@ def baby_profiles():
 
         #Construct a custom JSON format
         for baby in baby_list:
-            formatted_babies = [{
+            formatted_babies = {
                     "ObjectId": str(baby["_id"]), #Assuming "_id" is an ObjectId
                     "NigelID": baby.get("NigelID",""), # Get 'NigID' or default to an empty string
                     "DateOfBirth": baby.get("Date of Birth",0), # Get "Date of Birth" or default to 0
                     "BirthWeight": baby.get("Birth Weight (kg)",0),
                     "GestationalAge": baby.get("Gestational Age (weeks)",0), # Get gestational age or default to 0
                     "Notes": baby.get("Notes","")
-                }]
+                }
             
             all_babies.append(formatted_babies)
     
@@ -102,9 +102,7 @@ def baby_profiles():
     except Exception as e:
         return jsonify({"error": f"An error occurred while fetching profiles: {str(e)}"}), 500
 
-
-
-# Upload the data from an excel spreadsheet
+# Upload the data from an excel spreadsheet - make sure that there are no repeats of clinican's
 @app.route('/upload_data', methods=['PUT'])
 def upload_data():
     try:
@@ -137,7 +135,29 @@ def download_template():
     excel_template = "upload_template.xlsx"
     return send_file(excel_template, as_attachment= True)
 
-# This only seems to work for Sweat_Ms so far so I need to change the fileHandling code for the others
+@app.route('/download_all_data')
+def download_all_data():
+    try: 
+        db_collections = db.list_collection_names()
+        file_name = 'all_data.xlsx'
+        all_data = get_all_data(db,db_collections, file_name)
+        if 'successfully' in all_data:
+                # Set the path where you want to save the file on the local desktop
+                local_path = "/Users/tianpan/Documents/all_data.xlsx"
+
+                # Move the file to the local path
+                os.rename('all_data.xlsx', local_path)
+
+                # Send the file as a response
+                return send_file(local_path, as_attachment=True)
+
+            # Handle error case
+        return all_data, 500
+
+    except Exception as e:
+        # Handle exceptions
+        return f'Error: {str(e)}', 500
+
 # Getting the data from mongoDB and convert into an excel file - just for Sweat_Ms
 @app.route('/export_data_as_excel', methods=['GET'])
 def export_excel():

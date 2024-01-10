@@ -68,21 +68,35 @@ def retrieve_data(db, sheet_name, output_excel_path):
 
     return 'Data exported to Excel successfully'
 
-    # # Query MongoDB to retrieve the data
-    # cursor = db[sheet_name].find()
+# Converts all the data into an excel spreadsheet
+def get_all_data(db, sheet_names, output_excel_path):
 
-    # # Convert the cursor data to a list of dictionaries
-    # data_list = list(cursor)
+    with pd.ExcelWriter(output_excel_path, engine = 'xlsxwriter') as writer:
+        # Flatten the data to create a list of dictionaries
+        for sheet_name in sheet_names:
+            # Retrieve data from MongoDB for the current collection (sheet)
+            data = list(db[sheet_name].find())
 
-    # # If the data_list is empty, return or handle it accordingly
-    # if not data_list:
-    #     return 'No data found in MongoDB for the specified sheet.'
+            flattened_data = []
+            for entry in data:
+                
+                nigel_id = entry.get('NigelID')
+                if 'entries' in entry:
+                    entries = entry.get('entries', {})
 
-    # # Create a DataFrame from the list of dictionaries
-    # df = pd.json_normalize(data_list, sep='_')
+                    for date, records in entries.items():
+                        for record in records:
+                            flattened_data.append({'NigelID': nigel_id, 'Date': date, **record})
 
-    # # Write the DataFrame to an Excel file
-    # df.to_excel(output_excel_path, index=False)
+                else:
+                    flattened_data.append(entry)
+            # Convert the flattened data to a DataFrame
+            df = pd.DataFrame(flattened_data)
 
-    # return f'Data exported to {output_excel_path} successfully.'
+            # Save the DataFrame to Excel
+            df.to_excel(writer, sheet_name=sheet_name, index=False)
+
+    return 'Data exported to Excel successfully'
+
+
       
