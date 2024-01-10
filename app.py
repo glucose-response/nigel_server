@@ -10,6 +10,7 @@ import sys
 from fileHandling import *
 import pandas as pd
 import json
+import io
 
 app = Flask(__name__)
 app.logger.addHandler(logging.StreamHandler(sys.stdout))
@@ -145,8 +146,31 @@ def download_template():
     excel_template = "upload_template.xlsx"
     return send_file(excel_template, as_attachment= True)
 
-@app.route('/download_all_data')
+#This downloads all the data into an excel file 
+@app.route('/download_all_data', methods = ['GET'])
 def download_all_data():
+    try: 
+        db_collections = db.list_collection_names()
+        file_name = 'all_data.xlsx'
+
+        # Create an in-memory buffer to store the Excel file
+        output_excel_buffer = io.BytesIO()
+ 
+        all_data = get_all_data(db,db_collections, output_excel_buffer)
+        if 'successfully' in all_data:
+            # Set the buffer position to the beginning before sending
+            output_excel_buffer.seek(0)
+            return send_file(output_excel_buffer, as_attachment=True, download_name=file_name)
+
+        return all_data, 500
+
+    except Exception as e:
+        # Handle exceptions
+        return f'Error: {str(e)}', 500
+
+#This downloads all the data onto my local drive
+@app.route('/download_all_data_test')
+def download_all_data_test():
     try: 
         db_collections = db.list_collection_names()
         file_name = 'all_data.xlsx'
