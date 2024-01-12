@@ -182,12 +182,12 @@ def bsp():
         #Construct a custom JSON format
         for profile in profile_list:
             formatted_profiles = {
-                    "ObjectId": str(profiles["_id"]), #Assuming "_id" is an ObjectId
-                    "NigelID": profiles.get("NigelID",""), # Get 'NigID' or default to an empty string
-                    "birthday": profiles.get("birthday",0), # Get "Date of Birth" or default to 0
-                    "birthWeight": profiles.get("birthWeight",0),
-                    "gestationalAge": profiles.get("gestationalAge",0), # Get gestational age or default to 0
-                    "notes": profiles.get("notes","")
+                    "ObjectId": str(profile["_id"]), #Assuming "_id" is an ObjectId
+                    "NigelID": profile.get("NigelID",""), # Get 'NigID' or default to an empty string
+                    "birthday": profile.get("birthday",0), # Get "Date of Birth" or default to 0
+                    "birthWeight": profile.get("birthWeight",0),
+                    "gestationalAge": profile.get("gestationalAge",0), # Get gestational age or default to 0
+                    "notes": profile.get("notes","")
                 }
             all_profiles.append(formatted_profiles)
         
