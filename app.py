@@ -155,8 +155,7 @@ def baby_blood():
 
  # This prints out all the sweat measurements that are on the MongoDB database
 @app.route("/bsp", methods = ["GET"])
-def baby_blood():
-
+def bsp():
     try:
         blood_list = list(db_blood.find())
         sweat_list = list(db_sweat.find())
