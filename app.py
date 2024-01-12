@@ -113,7 +113,89 @@ def baby_profiles():
     except Exception as e:
         return jsonify({"error": f"An error occurred while fetching profiles: {str(e)}"}), 500
 
-# Upload the data from an excel spreadsheet - make sure that there are no repeats of clinican's
+# This prints out all the sweat measurements that are on the MongoDB database
+@app.route("/getSweats", methods = ["GET"])
+def baby_sweats():
+
+    try:
+        sweat_list = list(db_sweat.find())
+        all_sweats = []
+
+        #Construct a custom JSON format
+        for sweat in sweat_list:
+            formatted_sweat = {
+                    "NigelID": sweat.get("NigelID",""), # Get 'NigID' or default to an empty string
+                    "entries": sweat.get("entries",0)
+                    } # Get the entries objects
+            
+            all_sweats.append(formatted_sweat)
+
+        return jsonify({"sweat_list": all_sweats }), 201
+    except Exception as e:
+        return jsonify({"error": f"An error occurred while fetching all the sweat measurements: {str(e)}"}), 500
+    
+ # This prints out all the sweat measurements that are on the MongoDB database
+@app.route("/getBlood", methods = ["GET"])
+def baby_blood():
+
+    try:
+        blood_list = list(db_blood.find())
+        all_blood = []
+
+        #Construct a custom JSON format
+        for blood in blood_list:
+            formatted_blood = {
+                    "NigelID": blood.get("NigelID",""), # Get 'NigID' or default to an empty string
+                    "entries": blood.get("entries",0)} # Get the entries objects
+            
+            all_blood.append(formatted_blood)
+        return jsonify({"blood_list": all_blood}), 201
+    except Exception as e:
+        return jsonify({"error": f"An error occurred while fetching the blood measurements: {str(e)}"}), 500
+
+ # This prints out all the sweat measurements that are on the MongoDB database
+@app.route("/bsp", methods = ["GET"])
+def baby_blood():
+
+    try:
+        blood_list = list(db_blood.find())
+        sweat_list = list(db_sweat.find())
+        profile_list = list(profiles.find())
+
+        all_blood = []
+        all_sweat = []
+        all_profiles = []
+
+        #Construct a custom JSON format
+        for blood in blood_list:
+            formatted_blood = {
+                    "NigelID": blood.get("NigelID",""), # Get 'NigID' or default to an empty string
+                    "entries": blood.get("entries",0)} # Get the entries objects
+            all_blood.append(formatted_blood)
+
+        #Construct a custom JSON format
+        for sweat in sweat_list:
+            formatted_sweat = {
+                    "NigelID": sweat.get("NigelID",""), # Get 'NigID' or default to an empty string
+                    "entries": sweat.get("entries",0)} # Get the entries objects
+            all_sweat.append(formatted_sweat)
+
+        #Construct a custom JSON format
+        for profile in profile_list:
+            formatted_profiles = {
+                    "ObjectId": str(profiles["_id"]), #Assuming "_id" is an ObjectId
+                    "NigelID": profiles.get("NigelID",""), # Get 'NigID' or default to an empty string
+                    "birthday": profiles.get("birthday",0), # Get "Date of Birth" or default to 0
+                    "birthWeight": profiles.get("birthWeight",0),
+                    "gestationalAge": profiles.get("gestationalAge",0), # Get gestational age or default to 0
+                    "notes": profiles.get("notes","")
+                }
+            all_profiles.append(formatted_profiles)
+        
+        return jsonify({"blood_list": all_blood},{"sweat_list": all_sweat},{"profiles_list":all_profiles}), 201
+    except Exception as e:
+        return jsonify({"error": f"An error occurred while fetching the blood measurements: {str(e)}"}), 500
+
 @app.route('/upload_data', methods=['PUT'])
 def upload_data():
     try:
