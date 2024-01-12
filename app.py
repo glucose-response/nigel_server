@@ -219,7 +219,7 @@ def export_excel():
         # Handle exceptions
         return f'Error: {str(e)}', 500
 
-#Convert the data from the mongodb into json form
+#Convert the data from the mongodb into json form 
 @app.route('/export_data_as_json', methods = ['GET'])
 def export_json():
     
@@ -228,9 +228,13 @@ def export_json():
     nigelID = request.args.get('NigelID')
     print(collection, nigelID)
 
-    myquery = {'NigelID': int(nigelID)}
+    if nigelID == "all":
+        data = list(db[collection].find())
 
-    data = list(db[collection].find(myquery))
+    else:
+        myquery = {'NigelID': int(nigelID)}
+        data = list(db[collection].find(myquery))
+
     print("Retrieved data:", data)
 
     for entry in data:
