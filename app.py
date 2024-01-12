@@ -1,30 +1,29 @@
-# Ref 1: https://flask-pymongo.readthedocs.io/en/latest/ 
-from flask import Flask, jsonify, request, send_file
 import os
 from dotenv import load_dotenv
-from pymongo import MongoClient
-from werkzeug.utils import secure_filename
 from bson import json_util
-import logging
-import sys
 from fileHandling import *
 import pandas as pd
 import json
 import io
 
-app = Flask(__name__)
-app.logger.addHandler(logging.StreamHandler(sys.stdout))
-app.logger.setLevel(logging.ERROR) 
+# Reference 1 - How to connect to the MongoDB taken from https://flask-pymongo.readthedocs.io/en/latest/
+from flask import Flask, jsonify, request, send_file
+from pymongo import MongoClient
 
-# Defining the environment of where the database are
+app = Flask(__name__)
 load_dotenv()
-MONGODB_URI =  os.environ["MONGODB_URI"] 
+MONGODB_URI =  os.environ["MONGODB_URI"]
 client = MongoClient(MONGODB_URI) 
+# End of Reference 1
+
+# Defining the database and collections
 db = client.Nigel
 profiles = db.Profiles
 db_sweat= db.Sweat_Ms
 db_blood = db.Blood_Ms
 
+
+# Main page - test the app works
 @app.route("/")
 def index():
     return "Hello this is the main page"
@@ -34,22 +33,23 @@ def index():
 def testing():
     return "Hello this is a test"
 
-# Add a new baby profile to the Profiles database
+#-----PUT Requests------------------------
+
+# Add a new baby profile to the Profiles collection
 @app.route('/addBaby', methods=["PUT"])
 def add_baby():
 
     try: 
         data = request.get_json()
 
-        if 'NigelID' not in data:
-            return jsonify({"error": "Missing 'id' in the request data"}),400
-
         nigel_id = data.get("NigelID")
-
         existing_profile = profiles.find_one({"NigelID":nigel_id})
+
+        # Checks if the NigelID already exists in Profiles
         if existing_profile:
             return jsonify({"error": f"A profile with NigelID {nigel_id} already exists"}), 400
         
+        # If not a new baby profile is created
         else:
             baby_id = profiles.insert_one(data).inserted_id
 
@@ -61,18 +61,51 @@ def add_baby():
                 "GestationalAge": data.get("GestationalAge"),
                 "Notes": data.get("Notes"),
             }
+
         return jsonify(result), 201
 
     except Exception as e:
         return jsonify({"error": f"An error occurred: {str(e)}"}), 500 
+
+# Sends the uploaded excel file with data to the MongoDB database
+# Reference 2 - taken from CHATGPT
+@app.route('/upload_data', methods=['PUT'])
+def upload_data():
+    try:
+        file = request.files['file']
+
+        # Checks whether the file has been successfully received
+        if file and allowed_file(file.filename):
+            file_data = file.read()
+
+            # Debugging: Print the content of file_data
+            # print("File Data:", file_data)
+
+            # Getting a list of sheet names
+            xls = pd.ExcelFile(BytesIO(file_data))
+            sheet_names = xls.sheet_names
+
+            # Call the modified function to process and upload the data
+            process_data(file_data, db, sheet_names)  # Assuming file_data is a valid Excel file
+
+            return 'Data uploaded to MongoDB successfully'
+        
+        else:
+            return 'No file provided or invalid file format', 400
+        
+    except Exception as e:
+        print("Error:", str(e))
+        return f'Error: {str(e)}', 400
+# end of reference 2
+
+#-----GET Requests-----------------------
     
-#Able to locate a certain baby depending on the nigelID wanted
+# Locate a certain baby depending on the NigelID provided
 @app.route('/findbaby', methods = ['GET'])
 def get_baby_info():
     nigelID = request.args.get('NigelID')
     print(nigelID)
 
-    # Find the baby by ID in the MongoDB collection
     baby = profiles.find_one({'NigelID': int(nigelID)})
 
     if baby:
@@ -85,17 +118,14 @@ def get_baby_info():
         # Baby not found, return an error message
         return jsonify({'error': 'Baby not found'}), 404
 
-
-# This prints out all the profiles that are on the MongoDB database
+# Gets all the profiles in the Profiles collection
 @app.route("/profiles", methods = ["GET"])
 def baby_profiles():
 
     try:
         baby_list = list(profiles.find())
-
         all_babies = []
 
-        #Construct a custom JSON format
         for baby in baby_list:
             formatted_babies = {
                     "ObjectId": str(baby["_id"]), #Assuming "_id" is an ObjectId
@@ -113,7 +143,7 @@ def baby_profiles():
     except Exception as e:
         return jsonify({"error": f"An error occurred while fetching profiles: {str(e)}"}), 500
 
-# This prints out all the sweat measurements that are on the MongoDB database
+# Gets all the sweat measurements from the Sweat_Ms collection
 @app.route("/getSweats", methods = ["GET"])
 def baby_sweats():
 
@@ -121,20 +151,20 @@ def baby_sweats():
         sweat_list = list(db_sweat.find())
         all_sweats = []
 
-        #Construct a custom JSON format
         for sweat in sweat_list:
             formatted_sweat = {
                     "NigelID": sweat.get("NigelID",""), # Get 'NigID' or default to an empty string
-                    "entries": sweat.get("entries",0)
-                    } # Get the entries objects
-            
+                    "entries": sweat.get("entries",0) # Get the entries objects
+                    } 
+
             all_sweats.append(formatted_sweat)
 
         return jsonify({"sweat_list": all_sweats }), 201
+    
     except Exception as e:
         return jsonify({"error": f"An error occurred while fetching all the sweat measurements: {str(e)}"}), 500
     
- # This prints out all the sweat measurements that are on the MongoDB database
+# Gets all the blood measurements from the Blood_Ms collection
 @app.route("/getBlood", methods = ["GET"])
 def baby_blood():
 
@@ -142,7 +172,6 @@ def baby_blood():
         blood_list = list(db_blood.find())
         all_blood = []
 
-        #Construct a custom JSON format
         for blood in blood_list:
             formatted_blood = {
                     "NigelID": blood.get("NigelID",""), # Get 'NigID' or default to an empty string
@@ -150,10 +179,11 @@ def baby_blood():
             
             all_blood.append(formatted_blood)
         return jsonify({"blood_list": all_blood}), 201
+    
     except Exception as e:
         return jsonify({"error": f"An error occurred while fetching the blood measurements: {str(e)}"}), 500
 
- # This prints out all the sweat measurements that are on the MongoDB database
+# Gets all the blood measurements, sweat measurements and profiles on the MongoDB database
 @app.route("/bsp", methods = ["GET"])
 def bsp():
     try:
@@ -165,21 +195,18 @@ def bsp():
         all_sweat = []
         all_profiles = []
 
-        #Construct a custom JSON format
         for blood in blood_list:
             formatted_blood = {
                     "NigelID": blood.get("NigelID",""), # Get 'NigID' or default to an empty string
                     "entries": blood.get("entries",0)} # Get the entries objects
             all_blood.append(formatted_blood)
 
-        #Construct a custom JSON format
         for sweat in sweat_list:
             formatted_sweat = {
                     "NigelID": sweat.get("NigelID",""), # Get 'NigID' or default to an empty string
                     "entries": sweat.get("entries",0)} # Get the entries objects
             all_sweat.append(formatted_sweat)
 
-        #Construct a custom JSON format
         for profile in profile_list:
             formatted_profiles = {
                     "ObjectId": str(profiles["_id"]), #Assuming "_id" is an ObjectId
@@ -192,40 +219,40 @@ def bsp():
             all_profiles.append(formatted_profiles)
         
         return jsonify({"blood_list": all_blood},{"sweat_list": all_sweat},{"profiles_list":all_profiles}), 201
+    
     except Exception as e:
         return jsonify({"error": f"An error occurred while fetching the blood measurements: {str(e)}"}), 500
 
-@app.route('/upload_data', methods=['PUT'])
-def upload_data():
-    try:
-        file = request.files['file']
-
-        # Checks whether the file has been successfully received
-        if file and allowed_file(file.filename):
-            file_data = file.read()
-
-            # Debugging: Print the content of file_data
-            print("File Data:", file_data)
-
-            # Getting a list of sheet names
-            xls = pd.ExcelFile(BytesIO(file_data))
-            sheet_names = xls.sheet_names
-
-            # Call the modified function to process and upload the data
-            process_data(file_data, db, sheet_names)  # Assuming file_data is a valid Excel file
-
-            return 'Data uploaded to MongoDB successfully'
-        else:
-            return 'No file provided or invalid file format', 400
-    except Exception as e:
-        print("Error:", str(e))
-        return f'Error: {str(e)}', 400
-
-# This sends a copy of the upload template to the app
+# Sends the upload_template.xlsx to the app
 @app.route('/download_template',methods = ['GET'])
 def download_template():
     excel_template = "upload_template.xlsx"
     return send_file(excel_template, as_attachment= True)
+
+# Downloads all data to a local drive
+# Reference 3 - taken from ChatGPT 
+@app.route('/download_all_data_local')
+def download_all_data_local():
+    try: 
+        db_collections = db.list_collection_names()
+        file_name = 'all_data.xlsx'
+        all_data = get_all_data(db,db_collections, file_name)
+        if 'successfully' in all_data:
+                # Set the path where you want to save the file on the local desktop
+                local_path = "/Users/tianpan/Documents/all_data.xlsx"
+
+                # Move the file to the local path
+                os.rename('all_data.xlsx', local_path)
+
+                # Send the file as a response
+                return send_file(local_path, as_attachment=True)
+
+        return all_data, 500
+
+    except Exception as e:
+        # Handle exceptions
+        return f'Error: {str(e)}', 500
+# end of reference 3
 
 #This downloads all the data into an excel file 
 @app.route('/download_all_data', methods = ['GET'])
@@ -246,41 +273,14 @@ def download_all_data():
         return all_data, 500
 
     except Exception as e:
-        # Handle exceptions
         return f'Error: {str(e)}', 500
 
-#This downloads all the data onto my local drive
-@app.route('/download_all_data_test')
-def download_all_data_test():
-    try: 
-        db_collections = db.list_collection_names()
-        file_name = 'all_data.xlsx'
-        all_data = get_all_data(db,db_collections, file_name)
-        if 'successfully' in all_data:
-                # Set the path where you want to save the file on the local desktop
-                local_path = "/Users/tianpan/Documents/all_data.xlsx"
-
-                # Move the file to the local path
-                os.rename('all_data.xlsx', local_path)
-
-                # Send the file as a response
-                return send_file(local_path, as_attachment=True)
-
-            # Handle error case
-        return all_data, 500
-
-    except Exception as e:
-        # Handle exceptions
-        return f'Error: {str(e)}', 500
-
-# Getting the data from mongoDB and convert into an excel file - just for Sweat_Ms
+# Getting one collection from mongoDB database and converts into an excel file which saves on the local desktop
 @app.route('/export_data_as_excel', methods=['GET'])
 def export_excel():
     try:
-        # Call the function to retrieve and export data
         collection = request.args.get('collection')
-
-        fetched_data = retrieve_data(db, collection, 'output_data.xlsx')
+        fetched_data = retrieve_data(db, [collection], 'output_data.xlsx')
 
         # Check if the export was successful
         if 'successfully' in fetched_data:
@@ -293,25 +293,26 @@ def export_excel():
             # Send the file as a response
             return send_file(local_path, as_attachment=True)
 
-        # Handle error case
         return fetched_data, 500
 
     except Exception as e:
-        # Handle exceptions
         return f'Error: {str(e)}', 500
 
-#Convert the data from the mongodb into json form 
+# Sends data from MongoDB to the app in json form 
+# Reference 4: taken from ChatGPT
 @app.route('/export_data_as_json', methods = ['GET'])
 def export_json():
     
-    # This is the query parameters from the android studio
+    # Query parameters
     collection = request.args.get('collection')
     nigelID = request.args.get('NigelID')
     print(collection, nigelID)
 
+    # If all the babies data is need
     if nigelID == "all":
         data = list(db[collection].find())
 
+    # For a specific baby
     else:
         myquery = {'NigelID': int(nigelID)}
         data = list(db[collection].find(myquery))
@@ -328,6 +329,7 @@ def export_json():
     json_data_without_backslashes = json_data.replace("\\", "")
 
     return jsonify({collection + " for " + nigelID: json.loads(json_data_without_backslashes)}), 201
+# end of reference 4
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))

@@ -9,6 +9,7 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 # Convert from the Excel Data into MongoDB
+# Reference 2 - taken from ChatGPT (links to the '/upload_data in app.py)
 def process_data(file_data, db, sheet_names):
     xls = pd.ExcelFile(BytesIO(file_data))
 
@@ -17,10 +18,7 @@ def process_data(file_data, db, sheet_names):
 
         # Check if 'NigelID' and 'Timestamp' are present in the DataFrame
         if 'NigelID' in df.columns and 'Timestamp' in df.columns:
-            # Convert 'Timestamp' to datetime object
             df['Timestamp'] = pd.to_datetime(df['Timestamp'])
-
-            # Group data by 'NigelID' and day
             grouped_data = df.groupby(['NigelID', df['Timestamp'].dt.date]).apply(lambda group: group.to_dict(orient='records')).to_dict()
 
             for (NigelID, day), entries in grouped_data.items():
@@ -44,32 +42,12 @@ def process_data(file_data, db, sheet_names):
             data_dict = df.to_dict(orient='records')
             collection = db[sheet_name]
             collection.insert_many(data_dict)
+# end of reference 2
 
-# Convert from MongoDB to Excel
-def retrieve_data(db, sheet_name, output_excel_path):
-        # Retrieve data from MongoDB
-    data = list(db[sheet_name].find())
 
-    # Flatten the data to create a list of dictionaries
-    flattened_data = []
-    for entry in data:
-        nigel_id = entry.get('NigelID')
-        entries = entry.get('entries', {})
-
-        for date, records in entries.items():
-            for record in records:
-                flattened_data.append({'NigelID': nigel_id, 'Date': date, **record})
-
-    # Convert the flattened data to a DataFrame
-    df = pd.DataFrame(flattened_data)
-
-    # Save the DataFrame to Excel
-    df.to_excel(output_excel_path, index=False)
-
-    return 'Data exported to Excel successfully'
-
-# Converts all the data into an excel spreadsheet
-def get_all_data(db, sheet_names, output_excel_path):
+# Convert data from MongoDB database to Excel
+# Reference 5: taken from ChatGPT
+def retrieve_data(db, sheet_names, output_excel_path):
 
     with pd.ExcelWriter(output_excel_path, engine = 'xlsxwriter') as writer:
         # Flatten the data to create a list of dictionaries
@@ -79,7 +57,6 @@ def get_all_data(db, sheet_names, output_excel_path):
 
             flattened_data = []
             for entry in data:
-                
                 nigel_id = entry.get('NigelID')
                 if 'entries' in entry:
                     entries = entry.get('entries', {})
