@@ -229,14 +229,14 @@ def download_template():
     excel_template = "upload_template.xlsx"
     return send_file(excel_template, as_attachment= True)
 
-# Downloads all data to a local drive
+# Downloads all data to a local desktop
 # Reference 3 - taken from ChatGPT 
 @app.route('/download_all_data_local')
 def download_all_data_local():
     try: 
         db_collections = db.list_collection_names()
         file_name = 'all_data.xlsx'
-        all_data = get_all_data(db,db_collections, file_name)
+        all_data = retrieve_data(db,db_collections, file_name)
         if 'successfully' in all_data:
                 # Set the path where you want to save the file on the local desktop
                 local_path = "/Users/tianpan/Documents/all_data.xlsx"
@@ -254,7 +254,7 @@ def download_all_data_local():
         return f'Error: {str(e)}', 500
 # end of reference 3
 
-#This downloads all the data into an excel file 
+#This downloads all the data into an excel file and sends it to the app
 @app.route('/download_all_data', methods = ['GET'])
 def download_all_data():
     try: 
@@ -264,7 +264,7 @@ def download_all_data():
         # Create an in-memory buffer to store the Excel file
         output_excel_buffer = io.BytesIO()
  
-        all_data = get_all_data(db,db_collections, output_excel_buffer)
+        all_data = retrieve_data(db,db_collections, output_excel_buffer)
         if 'successfully' in all_data:
             # Set the buffer position to the beginning before sending
             output_excel_buffer.seek(0)
