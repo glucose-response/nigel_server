@@ -228,32 +228,6 @@ def bsp():
     except Exception as e:
         return jsonify({"error": f"An error occurred while fetching the blood measurements: {str(e)}"}), 500
 
-@app.route('/upload_data', methods=['PUT'])
-def upload_data():
-    try:
-        file = request.files['file']
-
-        # Checks whether the file has been successfully received
-        if file and allowed_file(file.filename):
-            file_data = file.read()
-
-            # Debugging: Print the content of file_data
-            print("File Data:", file_data)
-
-            # Getting a list of sheet names
-            xls = pd.ExcelFile(BytesIO(file_data))
-            sheet_names = xls.sheet_names
-
-            # Call the modified function to process and upload the data
-            process_data(file_data, db, sheet_names)  # Assuming file_data is a valid Excel file
-
-            return 'Data uploaded to MongoDB successfully'
-        else:
-            return 'No file provided or invalid file format', 400
-    except Exception as e:
-        print("Error:", str(e))
-        return f'Error: {str(e)}', 400
-
 # This sends a copy of the upload template to the app
 @app.route('/download_template',methods = ['GET'])
 def download_template():
