@@ -69,10 +69,10 @@ def add_baby():
             result = {
                 "id": str(baby_id),
                 "NigelID": data.get("NigelID"),
-                "DoB": data.get("DateOfBirth"),
-                "Weight": data.get("BirthWeight"),
-                "GestationalAge": data.get("GestationalAge"),
-                "Notes": data.get("Notes"),
+                "birthday": data.get("birthday"),
+                "birthWeight": data.get("weight"),
+                "gestationalAge": data.get("gestationalAge"),
+                "notes": data.get("notes"),
             }
 
         return jsonify(result), 201
