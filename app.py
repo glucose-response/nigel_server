@@ -287,7 +287,7 @@ def download_all_data_test():
     try: 
         db_collections = db.list_collection_names()
         file_name = 'all_data.xlsx'
-        all_data = get_all_data(db,db_collections, file_name)
+        all_data = retrieve_data(db,db_collections, file_name)
         if 'successfully' in all_data:
                 # Set the path where you want to save the file on the local desktop
                 local_path = "/Users/tianpan/Documents/all_data.xlsx"
