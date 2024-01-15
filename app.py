@@ -1,8 +1,5 @@
-# Ref 1: https://flask-pymongo.readthedocs.io/en/latest/ 
-from flask import Flask, jsonify, request, send_file
 import os
 from dotenv import load_dotenv
-from pymongo import MongoClient
 from werkzeug.utils import secure_filename
 from bson import json_util
 import logging
